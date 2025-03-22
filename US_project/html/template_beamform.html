@@ -1,0 +1,478 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>template_beamform</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-10-26"><meta name="DC.source" content="template_beamform.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">%	template_beamform.m</span>
+<span class="comment">%	Ultrasound beamforming project template</span>
+<span class="comment">%</span>
+<span class="comment">%	This script requires the variables</span>
+<span class="comment">%	Data [ntime, nelem]	RF signals from each array element</span>
+<span class="comment">%	f0			Transducer center frequency (MHz)</span>
+<span class="comment">%	fs			sampling frequency (MHz)</span>
+<span class="comment">%	c			speed of sound (mm/usec)</span>
+<span class="comment">%	dx			transducer element spacing (mm)</span>
+<span class="comment">%</span>
+<span class="comment">% Get needed variables</span>
+<span class="comment">%</span>
+clear <span class="string">all</span> <span class="string">clc</span>
+load <span class="string">data23</span>;
+f0 = 5;		<span class="comment">% MHz</span>
+fs = 20;	<span class="comment">% MHz</span>
+c = 1.54;	<span class="comment">% mm/us</span>
+<span class="comment">%</span>
+<span class="comment">% Output Array Parameters</span>
+<span class="comment">%</span>
+<span class="comment">% Determine the array spacing dx in mm</span>
+dx = c/f0/2;
+deltat=1/fs;
+[ntime, nelem] = size(Data);		<span class="comment">% # time samples, # array elements</span>
+disp(sprintf(<span class="string">'f0=%g MHz, deltat=%g usec, dx=%g mm'</span>, f0, deltat, dx))
+disp(sprintf(<span class="string">'# of Time Samples=%g,  # of Array Elements=%g'</span>,ntime,nelem))
+
+<span class="comment">%</span>
+
+<span class="comment">% --&gt; QUESTION a. &lt;--</span>
+<span class="comment">% Make a "wavefield" plot of the raw Data</span>
+<span class="comment">% Comment this out while you debug other parts of your program</span>
+<span class="comment">%</span>
+x_n=linspace(-(nelem-1)*dx/2,(nelem-1)*dx/2,nelem);
+t = linspace(1,ntime,ntime )*deltat;
+r = c*t/2;
+figure(1)
+showimage3(Data, 1,-1,x_n,r)  <span class="comment">% plotting the transpose here...time along x, tranducer x along y.</span>
+disp <span class="string">'hit key'</span>, pause
+
+<span class="comment">%</span>
+<span class="comment">% --&gt; QUESTION b. &lt;--</span>
+<span class="comment">% Compute the number of total beams and beam spacing</span>
+<span class="comment">% I used variables called</span>
+<span class="comment">%	nbeam = number of beams</span>
+<span class="comment">%	sin_theta = vector of beam positions</span>
+<span class="comment">%</span>
+nbeam = round(2*sqrt(2)*(nelem-1)*dx*f0/c);
+disp(sprintf(<span class="string">'nbeam = %g'</span>, nbeam));
+sin_theta = sin (linspace(-pi/4,pi/4,nbeam));
+
+<span class="comment">% --&gt; QUESTION f. &lt;--</span>
+databb = zeros(ntime,nelem);	<span class="comment">% Phase-Shifted Baseband data</span>
+
+<span class="comment">% code here to demodulate and write into databb</span>
+<span class="keyword">for</span> ie = 1:nelem
+    <span class="keyword">for</span> it=1:ntime
+        databb(it,ie) = fft(Data(it,ie)*exp(2i*pi*f0*t(it)));
+        <span class="keyword">if</span> databb(it,ie) &lt; 5
+            databb(it,ie) = ifft(databb(it,ie));
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="comment">% Plot and Show data</span>
+
+figure(2)
+showimage3(real(databb), 1,-1,x_n,r)
+disp(sprintf(<span class="string">'real part'</span>))
+disp <span class="string">'hit key'</span>, pause
+
+figure(3)
+showimage3(imag(databb), 1,-1,x_n,r)
+disp(sprintf(<span class="string">'imag part'</span>))
+disp <span class="string">'hit key'</span>, pause
+<span class="comment">%plot...</span>
+figure(4)
+showimage3(abs(databb), 1,-1,x_n,r)
+disp(sprintf(<span class="string">'databb'</span>))
+disp <span class="string">'hit key'</span>, pause
+
+<span class="comment">%</span>
+<span class="comment">% Create room for answers and precompute information</span>
+<span class="comment">%	This section merely makes matlab allocate memory before doing</span>
+<span class="comment">%	any other processing. It is not a necessary section, but will</span>
+<span class="comment">%	make Matlab run a little faster since it doesn't have to reallocate</span>
+<span class="comment">%	space every time you add another beam</span>
+<span class="comment">%</span>
+rsdata = zeros(ntime,nbeam);<span class="comment">% r-sin(theta) data buffer</span>
+rsdata_i = zeros(ntime,nbeam);
+rsdata_j = zeros(ntime,nbeam);
+rsdata_k = zeros(round(ntime/3),nbeam);
+bbshift = zeros(ntime,nelem);	<span class="comment">% Phase-Shifted Baseband data</span>
+theta_1=linspace(-pi/4,pi/4,nbeam);
+x_n=linspace(-(nelem-1)*dx/2,(nelem-1)*dx/2,nelem);
+tau=zeros(ntime,nelem,nbeam);
+t=linspace(0,ntime/fs,ntime);
+mt=zeros(ntime,nelem,nbeam);
+phase=zeros(ntime,nelem,nbeam);
+<span class="comment">%</span>
+<span class="comment">% Repeat for every beam</span>
+<span class="comment">%</span>
+<span class="keyword">for</span> ib=1:nbeam
+	<span class="comment">%disp(sprintf('Beam %d of %d', ib, nbeam))</span>
+
+<span class="comment">% --&gt; QUESTION c, d, g, h &lt;--</span>
+<span class="comment">% For the current beam, compute time delays (or delayed samples)</span>
+<span class="comment">% and phase rotations (if needed) for each channel (i.e. transducer</span>
+<span class="comment">% element) as a function of range, as well as gain corrections.</span>
+    <span class="keyword">for</span> ie=1:nelem
+        <span class="keyword">for</span> it=1:ntime
+<span class="comment">%--&gt; QUESTION c &lt;--</span>
+            tau(it,ie,ib) = -x_n(ie)*sin(theta_1(ib))/c + (x_n(ie)*cos(theta_1(ib)))^2/2/c/r(it);
+            mt(it,ie,ib)=floor(tau(it,ie,ib)*fs);
+<span class="comment">%--&gt; QUESTION g &lt;--</span>
+            phase(it,ie,ib)= -2*pi*f0*tau(it,ie,ib);
+            <span class="keyword">if</span> (td &lt;= 1800) &amp;&amp; (td &gt; 0)
+<span class="comment">%--&gt; QUESTION d &lt;--</span>
+                bbshift(it,ie) = Data(it + mt(it,ie,ib),ie);
+<span class="comment">%--&gt; QUESTION e &lt;--</span>
+                rsdata(it,ib) = rsdata(it,ib) + Data(it + mt(it,ie,ib),ie)/nelem;
+<span class="comment">%--&gt; QUESTION i &lt;--</span>
+                rsdata_i(it,ib) = rsdata_i(it,ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/nelem;
+<span class="comment">%--&gt; QUESTION j &lt;--</span>
+                <span class="keyword">if</span> mod(ie,2) == 1
+                    rsdata_j(it,ib) = rsdata_j(it,ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/round(nelem/2);
+                <span class="keyword">end</span>
+<span class="comment">%--&gt; QUESTION k &lt;--</span>
+                <span class="keyword">if</span> mod(it,3) == 0
+                    rsdata_k(round(it/3),ib) = rsdata_k(round(it/3),ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/nelem;
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+figure(5)
+subplot(3,1,1)
+plot(t/ntime,Data(:,12)*dx-(nelem-1)*dx/2)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+hold <span class="string">on</span>
+plot(t/ntime,bbshift(:,12)*dx-(nelem-1)*dx/2)
+legend(<span class="string">"before shifted"</span>,<span class="string">"after shifted"</span>)
+title(<span class="string">"element=12"</span>)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+
+subplot(3,1,2)
+plot(t/ntime,Data(:,30)*dx-(nelem-1)*dx/2)
+title(<span class="string">"element=30"</span>)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+hold <span class="string">on</span>
+plot(t/ntime,bbshift(:,30)*dx-(nelem-1)*dx/2)
+legend(<span class="string">"before shifted"</span>,<span class="string">"after shifted"</span>)
+title(<span class="string">"element=30"</span>)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+
+subplot(3,1,3)
+plot(t/ntime,Data(:,47)*dx-(nelem-1)*dx/2)
+title(<span class="string">"element=47"</span>)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+hold <span class="string">on</span>
+plot(t/ntime,bbshift(:,47)*dx-(nelem-1)*dx/2)
+legend(<span class="string">"before shifted"</span>,<span class="string">"after shifted"</span>)
+title(<span class="string">"element=47"</span>)
+xlabel(<span class="string">"s"</span>)
+ylabel(<span class="string">"mm"</span>)
+
+
+figure(6)
+showimage3(abs(rsdata), 1, 40,theta_1,r)
+disp(sprintf(<span class="string">'rsdata'</span>))
+disp <span class="string">'hit key'</span>, pause
+
+figure(7)
+showimage3(abs(rsdata_i), 1, 40,theta_1,r)
+disp(sprintf(<span class="string">'rsdata_i'</span>))
+disp <span class="string">'hit key'</span>, pause
+
+figure(8)
+showimage3(abs(rsdata_j), 1, 40,theta_1,r)
+disp(sprintf(<span class="string">'rsdata_j'</span>))
+disp <span class="string">'hit key'</span>, pause
+
+figure(9)
+showimage3(abs(rsdata_k), 1, 40,theta_1,3*r)
+disp(sprintf(<span class="string">'rsdata_k'</span>))
+disp <span class="string">'hit key'</span>, pause
+</pre><pre class="codeoutput">f0=5 MHz, deltat=0.05 usec, dx=0.154 mm
+# of Time Samples=1800,  # of Array Elements=95
+hit key
+nbeam = 133
+real part
+hit key
+imag part
+hit key
+databb
+hit key
+rsdata
+hit key
+rsdata_i
+hit key
+rsdata_j
+hit key
+rsdata_k
+</pre><img vspace="5" hspace="5" src="template_beamform_01.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_02.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_03.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_04.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_05.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_06.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_07.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_08.png" alt=""> <img vspace="5" hspace="5" src="template_beamform_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%	template_beamform.m
+%	Ultrasound beamforming project template
+%
+%	This script requires the variables
+%	Data [ntime, nelem]	RF signals from each array element
+%	f0			Transducer center frequency (MHz)
+%	fs			sampling frequency (MHz)
+%	c			speed of sound (mm/usec)
+%	dx			transducer element spacing (mm)
+%
+% Get needed variables
+%
+clear all clc
+load data23;
+f0 = 5;		% MHz
+fs = 20;	% MHz
+c = 1.54;	% mm/us
+% 
+% Output Array Parameters
+%
+% Determine the array spacing dx in mm
+dx = c/f0/2;
+deltat=1/fs;
+[ntime, nelem] = size(Data);		% # time samples, # array elements
+disp(sprintf('f0=%g MHz, deltat=%g usec, dx=%g mm', f0, deltat, dx))
+disp(sprintf('# of Time Samples=%g,  # of Array Elements=%g',ntime,nelem))
+
+%
+
+% REPLACE_WITH_DASH_DASH> QUESTION a. <REPLACE_WITH_DASH_DASH
+% Make a "wavefield" plot of the raw Data
+% Comment this out while you debug other parts of your program
+%
+x_n=linspace(-(nelem-1)*dx/2,(nelem-1)*dx/2,nelem);
+t = linspace(1,ntime,ntime )*deltat;
+r = c*t/2;
+figure(1)
+showimage3(Data, 1,-1,x_n,r)  % plotting the transpose here...time along x, tranducer x along y.
+disp 'hit key', pause
+
+%
+% REPLACE_WITH_DASH_DASH> QUESTION b. <REPLACE_WITH_DASH_DASH
+% Compute the number of total beams and beam spacing
+% I used variables called
+%	nbeam = number of beams
+%	sin_theta = vector of beam positions
+%
+nbeam = round(2*sqrt(2)*(nelem-1)*dx*f0/c);
+disp(sprintf('nbeam = %g', nbeam));
+sin_theta = sin (linspace(-pi/4,pi/4,nbeam));
+
+% REPLACE_WITH_DASH_DASH> QUESTION f. <REPLACE_WITH_DASH_DASH
+databb = zeros(ntime,nelem);	% Phase-Shifted Baseband data
+
+% code here to demodulate and write into databb
+for ie = 1:nelem
+    for it=1:ntime
+        databb(it,ie) = fft(Data(it,ie)*exp(2i*pi*f0*t(it)));
+        if databb(it,ie) < 5
+            databb(it,ie) = ifft(databb(it,ie));
+        end
+
+    end
+end
+% Plot and Show data 
+
+figure(2)
+showimage3(real(databb), 1,-1,x_n,r)
+disp(sprintf('real part'))
+disp 'hit key', pause
+
+figure(3)
+showimage3(imag(databb), 1,-1,x_n,r)
+disp(sprintf('imag part'))
+disp 'hit key', pause
+%plot...
+figure(4)
+showimage3(abs(databb), 1,-1,x_n,r)
+disp(sprintf('databb'))
+disp 'hit key', pause
+
+%
+% Create room for answers and precompute information
+%	This section merely makes matlab allocate memory before doing
+%	any other processing. It is not a necessary section, but will
+%	make Matlab run a little faster since it doesn't have to reallocate
+%	space every time you add another beam
+%
+rsdata = zeros(ntime,nbeam);% r-sin(theta) data buffer
+rsdata_i = zeros(ntime,nbeam);
+rsdata_j = zeros(ntime,nbeam);
+rsdata_k = zeros(round(ntime/3),nbeam);
+bbshift = zeros(ntime,nelem);	% Phase-Shifted Baseband data
+theta_1=linspace(-pi/4,pi/4,nbeam);
+x_n=linspace(-(nelem-1)*dx/2,(nelem-1)*dx/2,nelem);
+tau=zeros(ntime,nelem,nbeam);
+t=linspace(0,ntime/fs,ntime);
+mt=zeros(ntime,nelem,nbeam);
+phase=zeros(ntime,nelem,nbeam);
+%
+% Repeat for every beam
+%
+for ib=1:nbeam
+	%disp(sprintf('Beam %d of %d', ib, nbeam))
+
+% REPLACE_WITH_DASH_DASH> QUESTION c, d, g, h <REPLACE_WITH_DASH_DASH
+% For the current beam, compute time delays (or delayed samples)
+% and phase rotations (if needed) for each channel (i.e. transducer 
+% element) as a function of range, as well as gain corrections.
+    for ie=1:nelem
+        for it=1:ntime
+%REPLACE_WITH_DASH_DASH> QUESTION c <REPLACE_WITH_DASH_DASH
+            tau(it,ie,ib) = -x_n(ie)*sin(theta_1(ib))/c + (x_n(ie)*cos(theta_1(ib)))^2/2/c/r(it);
+            mt(it,ie,ib)=floor(tau(it,ie,ib)*fs);
+%REPLACE_WITH_DASH_DASH> QUESTION g <REPLACE_WITH_DASH_DASH
+            phase(it,ie,ib)= -2*pi*f0*tau(it,ie,ib);
+            if (td <= 1800) && (td > 0)
+%REPLACE_WITH_DASH_DASH> QUESTION d <REPLACE_WITH_DASH_DASH
+                bbshift(it,ie) = Data(it + mt(it,ie,ib),ie);
+%REPLACE_WITH_DASH_DASH> QUESTION e <REPLACE_WITH_DASH_DASH
+                rsdata(it,ib) = rsdata(it,ib) + Data(it + mt(it,ie,ib),ie)/nelem;
+%REPLACE_WITH_DASH_DASH> QUESTION i <REPLACE_WITH_DASH_DASH
+                rsdata_i(it,ib) = rsdata_i(it,ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/nelem;
+%REPLACE_WITH_DASH_DASH> QUESTION j <REPLACE_WITH_DASH_DASH
+                if mod(ie,2) == 1
+                    rsdata_j(it,ib) = rsdata_j(it,ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/round(nelem/2);
+                end
+%REPLACE_WITH_DASH_DASH> QUESTION k <REPLACE_WITH_DASH_DASH
+                if mod(it,3) == 0
+                    rsdata_k(round(it/3),ib) = rsdata_k(round(it/3),ib) + databb(it + mt(it,ie,ib),ie)*exp(1i*phase(it,ie,ib))/nelem;
+                end
+            end
+        end
+    end
+end
+
+figure(5)
+subplot(3,1,1)
+plot(t/ntime,Data(:,12)*dx-(nelem-1)*dx/2)
+xlabel("s")
+ylabel("mm")
+hold on
+plot(t/ntime,bbshift(:,12)*dx-(nelem-1)*dx/2)
+legend("before shifted","after shifted")
+title("element=12")
+xlabel("s")
+ylabel("mm")
+
+subplot(3,1,2)
+plot(t/ntime,Data(:,30)*dx-(nelem-1)*dx/2)
+title("element=30")
+xlabel("s")
+ylabel("mm")
+hold on
+plot(t/ntime,bbshift(:,30)*dx-(nelem-1)*dx/2)
+legend("before shifted","after shifted")
+title("element=30")
+xlabel("s")
+ylabel("mm")
+
+subplot(3,1,3)
+plot(t/ntime,Data(:,47)*dx-(nelem-1)*dx/2)
+title("element=47")
+xlabel("s")
+ylabel("mm")
+hold on
+plot(t/ntime,bbshift(:,47)*dx-(nelem-1)*dx/2)
+legend("before shifted","after shifted")
+title("element=47")
+xlabel("s")
+ylabel("mm")
+
+
+figure(6)
+showimage3(abs(rsdata), 1, 40,theta_1,r)
+disp(sprintf('rsdata'))
+disp 'hit key', pause
+
+figure(7)
+showimage3(abs(rsdata_i), 1, 40,theta_1,r)
+disp(sprintf('rsdata_i'))
+disp 'hit key', pause
+
+figure(8)
+showimage3(abs(rsdata_j), 1, 40,theta_1,r)
+disp(sprintf('rsdata_j'))
+disp 'hit key', pause
+
+figure(9)
+showimage3(abs(rsdata_k), 1, 40,theta_1,3*r)
+disp(sprintf('rsdata_k'))
+disp 'hit key', pause
+
+
+
+
+##### SOURCE END #####
+--></body></html>
